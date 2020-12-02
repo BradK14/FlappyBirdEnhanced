@@ -83,6 +83,23 @@ def check_collision(pipes):
             return False
 
     return True
+    
+    
+def create_powerUp():
+    random_pu_pos = choice(powerUp_height)
+    powerUp_rect_object = powerUp.get_rect(center=(DISPLAY_WIDTH + 20, (DISPLAY_HEIGHT // 2) + random_pu_pos))
+    
+    return powerUp_rect_object
+    
+    
+def draw_powerUp(powerUp_rect_obj):
+    display.blit(powerUp, powerUp_rect_obj)
+                
+                
+def move_powerUp(powerUp_rect_obj): 
+    powerUp_rect_obj.centerx -= 3	# determines how fast the power-up moves across the screen 
+    
+    return powerUp_rect_obj
 
 
 def score_display(game_state):
@@ -150,6 +167,13 @@ pg.time.set_timer(bird_flap, 200)
 bird_move = 0
 bird_rotate = 0
 
+'POWER-UP'
+powerUp = pg.image.load('assets/images/sprites/Bird_up.png').convert_alpha()		# replace with different file later 
+powerUp_spawn = pg.USEREVENT
+powerUp_spawn_counter = 0;	# counter used to determine when to spawn a power-up
+powerUp_height = [-100, 0, 100]
+powerUp_rect = powerUp.get_rect(center=(DISPLAY_WIDTH + 20, DISPLAY_HEIGHT // 2))
+
 'SOUND EFFECTS'
 pg.mixer.init(44100, 16, 2, 512)
 flap_snd = pg.mixer.Sound('assets/sounds/sound_effects/Flap.ogg')
@@ -208,6 +232,12 @@ while True:
 
         if event.type == pipe_spawn:
             pipe_list.extend(create_pipe())
+            powerUp_spawn_counter += 1
+            
+        if event.type == powerUp_spawn:
+            if powerUp_spawn_counter % 15 == 0:	# this adjusts how frequently power-ups will spawn
+                powerUp_rect = create_powerUp()
+                powerUp_spawn_counter = 0
 
     display.blit(bg, (0, 0))
     display.blit(bg, (288, 0))
@@ -224,6 +254,10 @@ while True:
         draw_pipe(pipe_list)
         pipe_list = move_pipe(pipe_list)
         pipe_list = remove_pipe(pipe_list)
+        
+        # POWER-UP
+        draw_powerUp(powerUp_rect)
+        powerUp_rect = move_powerUp(powerUp_rect)
 
         # SCORE
         score_display('main_game')
@@ -235,6 +269,9 @@ while True:
         # PIPE
         pipe_list = move_pipe(pipe_list)
         pipe_list = remove_pipe(pipe_list)
+        
+        # POWER-UP
+        powerUp_rect = move_powerUp(powerUp_rect)
         
         # SCORE
         high_score = score_update(score, high_score)
