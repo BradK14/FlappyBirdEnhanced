@@ -11,12 +11,6 @@ def animation():
     return new_bird, new_bird_rect
 
 
-def rotate(img):
-    new_bird = pg.transform.rotate(img, - bird_move * 3)
-
-    return new_bird
-
-
 def create_pipe():
     random_pipe = choice(pipe_hei)
     top_pipe = pipe.get_rect(midbottom=(DISPLAY_WIDTH + 26, random_pipe - 150))
@@ -59,8 +53,9 @@ def remove_pipe(pipes):
 
 
 def move_floor():
-    display.blit(floor, (floor_pos_x, DISPLAY_HEIGHT - floor_rect.height // 2))
-    display.blit(floor, (floor_pos_x + DISPLAY_WIDTH, DISPLAY_HEIGHT - floor_rect.height // 2))
+    for i in range(3):
+        display.blit(floors[i], (floor_pos_x[i], DISPLAY_HEIGHT - floor_rects[i].height // 2))
+        display.blit(floors[i], (floor_pos_x[i] + DISPLAY_WIDTH, DISPLAY_HEIGHT - floor_rects[i].height // 2))
 
 
 def check_obstacle_passed():
@@ -82,9 +77,10 @@ def check_collision(pipes):
             collide_snd.play()
             return False
 
-    if bird_rect.top <= 0 or bird_rect.bottom >= DISPLAY_HEIGHT - floor_rect.height // 2:
-        collide_snd.play()
-        return False
+    for i in range(3):
+        if bird_rect.top <= 0 or bird_rect.bottom >= DISPLAY_HEIGHT - floor_rects[i].height // 2:
+            collide_snd.play()
+            return False
 
     return True
 
@@ -124,9 +120,13 @@ pg.display.set_caption('FlaPyBird')
 
 'BACKGROUND'
 bg = pg.image.load('assets/images/sprites/Background.png').convert()
-floor = pg.image.load('assets/images/sprites/Floor.png').convert_alpha()
-floor_rect = floor.get_rect()
-floor_pos_x = 0
+floors = []
+floor_pos_x = [0, 288, 576]
+floor_rects = []
+for i in range(3):
+    floors.append(pg.image.load('assets/images/sprites/Floor.png').convert_alpha())
+    floor_rects.append(floors[i].get_rect())
+
 pipe = pg.image.load('assets/images/sprites/Pipe.png')
 pipe_list = []
 pipe_spawn = pg.USEREVENT
@@ -148,7 +148,7 @@ bird_rect = bird.get_rect(center=(50, DISPLAY_HEIGHT // 2))
 bird_flap = pg.USEREVENT + 1
 pg.time.set_timer(bird_flap, 200)
 bird_move = 0
-gravity = 0.25
+# gravity = 0.25
 
 'SOUND EFFECTS'
 pg.mixer.init(44100, 16, 2, 512)
@@ -203,14 +203,15 @@ while True:
             pipe_list.extend(create_pipe())
 
     display.blit(bg, (0, 0))
+    display.blit(bg, (288, 0))
+    display.blit(bg, (576, 0))
 
     if game:
         # BIRD
-        bird_move += gravity
+        # bird_move += gravity
         bird_rect.centery += int(bird_move)
-        bird_rotate = rotate(bird)
 
-        display.blit(bird_rotate, bird_rect)
+        display.blit(bird, bird_rect)
         game = check_collision(pipe_list)
 
         # PIPE
@@ -235,8 +236,9 @@ while True:
 
     # FLOOR
     move_floor()
-    if floor_pos_x <= -DISPLAY_WIDTH:
-        floor_pos_x = 0
-    floor_pos_x -= 1
+    for i in range(3):
+        if floor_pos_x[i] <= -DISPLAY_WIDTH:
+            floor_pos_x[i] = 0
+        floor_pos_x[i] -= 1
 
     pg.display.update()
