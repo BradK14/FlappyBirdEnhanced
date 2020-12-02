@@ -30,7 +30,7 @@ def draw_pipe(pipes):
 
 def move_pipe(pipes):
     for p in pipes:
-        p.centerx -= 5
+        p.centerx -= pipe_speed
 
     return pipes
 
@@ -65,7 +65,7 @@ def check_obstacle_passed():
     if len(pipes) > obstacle_number:
         if pipes[obstacle_number][0] + 52 <= 26:
             obstacle_number += 2
-            point_snd.play()
+            # point_snd.play()
             return True
 
     return False
@@ -74,12 +74,12 @@ def check_obstacle_passed():
 def check_collision(pipes):
     for p in pipes:
         if bird_rect.colliderect(p):
-            collide_snd.play()
+            # collide_snd.play()
             return False
 
     for i in range(3):
         if bird_rect.top <= 0 or bird_rect.bottom >= DISPLAY_HEIGHT - floor_rects[i].height // 2:
-            collide_snd.play()
+            # collide_snd.play()
             return False
 
     return True
@@ -87,7 +87,7 @@ def check_collision(pipes):
     
 def create_powerUp():
     random_pu_pos = choice(powerUp_height)
-    powerUp_rect_object = powerUp.get_rect(center=(DISPLAY_WIDTH + 20, (DISPLAY_HEIGHT // 2) + random_pu_pos))
+    powerUp_rect_object = powerUp.get_rect(center=(DISPLAY_WIDTH + 220, (DISPLAY_HEIGHT // 2) + random_pu_pos))
     
     return powerUp_rect_object
     
@@ -97,7 +97,7 @@ def draw_powerUp(powerUp_rect_obj):
                 
                 
 def move_powerUp(powerUp_rect_obj): 
-    powerUp_rect_obj.centerx -= 3	# determines how fast the power-up moves across the screen 
+    powerUp_rect_obj.centerx -= pipe_speed	# determines how fast the power-up moves across the screen
     
     return powerUp_rect_obj
 
@@ -149,7 +149,8 @@ pipe_list = []
 pipe_spawn = pg.USEREVENT
 obstacle_number = 0
 
-pg.time.set_timer(pipe_spawn, 1200)
+pipe_speed = 3
+pg.time.set_timer(pipe_spawn, int(6000 / pipe_speed))
 pipe_hei = [200, 300, 400]
 bg_game_over = pg.image.load('assets/images/sprites/Game_Over.png')
 bg_game_over_rect = bg_game_over.get_rect(center=(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2 - 25))
@@ -170,7 +171,7 @@ bird_rotate = 0
 'POWER-UP'
 powerUp = pg.image.load('assets/images/sprites/Bird_up.png').convert_alpha()		# replace with different file later 
 powerUp_spawn = pg.USEREVENT
-powerUp_spawn_counter = 0;	# counter used to determine when to spawn a power-up
+powerUp_spawn_counter = 0	# counter used to determine when to spawn a power-up
 powerUp_height = [-100, 0, 100]
 powerUp_rect = powerUp.get_rect(center=(DISPLAY_WIDTH + 20, DISPLAY_HEIGHT // 2))
 
@@ -216,6 +217,7 @@ while True:
                 bird_rect.center = (50, DISPLAY_HEIGHT // 2)
                 score = 0
                 obstacle_number = 0
+                pipe_speed = 3
 
         if event.type == pg.KEYUP:
             if event.key == pg.K_UP or event.key == pg.K_w or event.key == pg.K_DOWN or event.key == pg.K_s:
@@ -233,6 +235,15 @@ while True:
         if event.type == pipe_spawn:
             pipe_list.extend(create_pipe())
             powerUp_spawn_counter += 1
+            if pipe_speed <= 4:
+                pipe_speed += 0.1
+            elif pipe_speed <= 6:
+                pipe_speed += 0.05
+            elif pipe_speed <= 8:
+                pipe_speed += 0.025
+            else:
+                pipe_speed += 0.01
+            pg.time.set_timer(pipe_spawn, int(6000 / pipe_speed))
             
         if event.type == powerUp_spawn:
             if powerUp_spawn_counter % 15 == 0:	# this adjusts how frequently power-ups will spawn
@@ -247,7 +258,7 @@ while True:
         # BIRD
         bird_rect.centery += int(bird_move)
 
-        display.blit(pg.transform.rotate(bird,bird_rotate), bird_rect)
+        display.blit(pg.transform.rotate(bird, bird_rotate), bird_rect)
         game = check_collision(pipe_list)
 
         # PIPE
