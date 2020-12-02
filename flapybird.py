@@ -148,7 +148,7 @@ bird_rect = bird.get_rect(center=(50, DISPLAY_HEIGHT // 2))
 bird_flap = pg.USEREVENT + 1
 pg.time.set_timer(bird_flap, 200)
 bird_move = 0
-# gravity = 0.25
+bird_rotate = 0
 
 'SOUND EFFECTS'
 pg.mixer.init(44100, 16, 2, 512)
@@ -181,8 +181,10 @@ while True:
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_UP or event.key == pg.K_w:
                 bird_move = -4
+                bird_rotate = 20
             if event.key == pg.K_DOWN or event.key == pg.K_s:
                 bird_move = 4
+                bird_rotate = -20
             if event.key == pg.K_SPACE and not game:
                 game = True
                 pipe_list.clear()
@@ -194,6 +196,7 @@ while True:
         if event.type == pg.KEYUP:
             if event.key == pg.K_UP or event.key == pg.K_w or event.key == pg.K_DOWN or event.key == pg.K_s:
                 bird_move = 0
+                bird_rotate = 0
 
         if event.type == bird_flap:
             if bird_index < 2:
@@ -212,10 +215,9 @@ while True:
 
     if game:
         # BIRD
-        # bird_move += gravity
         bird_rect.centery += int(bird_move)
 
-        display.blit(bird, bird_rect)
+        display.blit(pg.transform.rotate(bird,bird_rotate), bird_rect)
         game = check_collision(pipe_list)
 
         # PIPE
