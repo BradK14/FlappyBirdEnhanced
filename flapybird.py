@@ -179,17 +179,21 @@ while True:
             exit()
 
         if event.type == pg.KEYDOWN:
-            if event.key == pg.K_SPACE and game:
-                bird_move = 0
-                bird_move -= 8
-                flap_snd.play()
-            elif event.key == pg.K_SPACE and not game:
+            if event.key == pg.K_UP or event.key == pg.K_w:
+                bird_move = -4
+            if event.key == pg.K_DOWN or event.key == pg.K_s:
+                bird_move = 4
+            if event.key == pg.K_SPACE and not game:
                 game = True
                 pipe_list.clear()
                 bird_move = 0
                 bird_rect.center = (50, DISPLAY_HEIGHT // 2)
                 score = 0
                 obstacle_number = 0
+
+        if event.type == pg.KEYUP:
+            if event.key == pg.K_UP or event.key == pg.K_w or event.key == pg.K_DOWN or event.key == pg.K_s:
+                bird_move = 0
 
         if event.type == bird_flap:
             if bird_index < 2:
