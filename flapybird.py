@@ -147,14 +147,18 @@ def check_collision_pu(power_up, p_ups_active):
 # Can set different values depending on power up
 def activate_pu(pu_name, p_ups_active):
     if pu_name == "speed":
+        deactivate_pu(3, p_ups_active)  # Preemptively deactivating power ups
+        deactivate_pu(2, p_ups_active)
         global speed_multiplier
         speed_multiplier = 2.0
     if pu_name == "space":
         deactivate_pu(3, p_ups_active)	# ensures speed and spacing does not break by activating another PU
+        deactivate_pu(1, p_ups_active)  # Deactivate the other power up to ensure that only one is active at the same time
         global pipe_spacing
         pipe_spacing = 8000
     if pu_name == "slow":
         deactivate_pu(2, p_ups_active)	# ditto as above
+        deactivate_pu(1, p_ups_active)
         global pipe_speed
         global pipe_speed_store
         pipe_speed_store = pipe_speed
