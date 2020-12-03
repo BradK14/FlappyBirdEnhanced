@@ -8,8 +8,10 @@ from FlaPyBird.constants import *
 def animation():
     new_bird = bird_frames[bird_index]
     new_bird_rect = new_bird.get_rect(center=(50, bird_rect.centery))
+    new_powerUp2 = powerUp2_frames[powerUp2_index]
+    new_powerUp2_rect = new_powerUp2.get_rect(center=(powerUp_rect.centerx, powerUp_rect.centery))
 
-    return new_bird, new_bird_rect
+    return new_bird, new_bird_rect, new_powerUp2, new_powerUp2_rect
 
 
 def create_pipe():
@@ -274,8 +276,12 @@ bird_moving_down = False
 
 'POWER-UP'
 powerUp1 = pg.image.load('assets/images/sprites/lightning.png').convert_alpha() 
-powerUp2 = pg.image.load('assets/images/sprites/R_Pickup_1.png.png').convert_alpha()
-powerUp3 = pg.image.load('assets/images/sprites/clock_icon.png').convert_alpha() 
+powerUp2_frames = [pg.image.load('assets/images/sprites/R_Pickup_1.png.png').convert_alpha(),
+                   pg.image.load('assets/images/sprites/R_Pickup_2.png.png').convert_alpha(),
+                   pg.image.load('assets/images/sprites/R_Pickup_3.png.png').convert_alpha()]
+powerUp3 = pg.image.load('assets/images/sprites/clock_icon.png').convert_alpha()
+powerUp2 = powerUp2_frames[0]
+powerUp2_index = 0
 powerUp_types = [1, 2, 3]
 currentPU_type = 1		# default to 1, changed when new ones spawned 
 powerUp_duration = 5		# default to 5, changes according to last power-up created
@@ -286,9 +292,6 @@ powerUp_height = [-100, 0, 100]
 powerUp_rect = powerUp1.get_rect(center=(DISPLAY_WIDTH + 20, DISPLAY_HEIGHT // 2))
 powerUp_active = False  # is there an active power up?
 p_ups_active = [False, False, False]
-pu_1_active = False
-pu_2_active = False
-pu_3_active = False
 start_ticks = 0  # start_ticks starts the timer for the power up
 speed_multiplier = 1.0
 
@@ -343,13 +346,19 @@ while True:
             if event.key == pg.K_DOWN or event.key == pg.K_s:
                 bird_moving_down = False
 
-        if event.type == bird_flap:
+        if event.type == bird_flap: #  Also used for power up animations
             if bird_index < 2:
                 bird_index += 1
             else:
                 bird_index = 0
 
-            bird, bird_rect = animation()
+            if powerUp2_index < 2:
+                powerUp2_index += 1
+            else:
+                powerUp2_index = 0
+
+            bird, bird_rect, powerUp2, powerUp_rect = animation()
+
 
         if event.type == pipe_spawn:
             pipe_list.extend(create_pipe())
