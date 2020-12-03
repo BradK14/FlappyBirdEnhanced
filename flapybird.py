@@ -135,6 +135,8 @@ def check_collision_pu(power_up):
         if currentPU_type == 3:	# check which type of PowerUp is currently active 
             activate_pu("slow")
             powerUp_active = True
+        return 1
+    return 0
 
 
 # Can set different values depending on power up
@@ -173,14 +175,26 @@ def score_display(game_state):
         score_font = font.render(str(int(score)), True, white)
         score_font_rect = score_font.get_rect(center=(DISPLAY_WIDTH // 2, 50))
         display.blit(score_font, score_font_rect)
+
+        pu_score_font = font.render(str(int(pu_score)), True, yellow)
+        pu_score_font_rect = pu_score_font.get_rect(center=(DISPLAY_WIDTH // 2 + 75, 50))
+        display.blit(pu_score_font, pu_score_font_rect)
     elif game_state == 'game_over':
         score_font = font.render(f'Score: {int(score)}', True, white)
         score_font_rect = score_font.get_rect(center=(DISPLAY_WIDTH // 2, 50))
         display.blit(score_font, score_font_rect)
 
+        pu_score_font = font.render(f'Power Up Score: {int(pu_score)}', True, yellow)
+        pu_score_font_rect = pu_score_font.get_rect(center=(DISPLAY_WIDTH // 2, 80))
+        display.blit(pu_score_font, pu_score_font_rect)
+
         hight_score_font = font.render(f'High Score: {int(high_score)}', True, white)
         hight_score_font_rect = hight_score_font.get_rect(center=(DISPLAY_WIDTH // 2, 412))
         display.blit(hight_score_font, hight_score_font_rect)
+
+        pu_hight_score_font = font.render(f'Power Up High Score: {int(pu_high_score)}', True, yellow)
+        pu_hight_score_font_rect = pu_hight_score_font.get_rect(center=(DISPLAY_WIDTH // 2, 442))
+        display.blit(pu_hight_score_font, pu_hight_score_font_rect)
 
 
 def increment_score(scr, increment):
@@ -190,11 +204,13 @@ def increment_score(scr, increment):
     return scr
 
 
-def score_update(scr, high_scr):
+def score_update(scr, high_scr, pu_scr, pu_high_scr):
     if scr > high_scr:
         high_scr = scr
+    if pu_scr > pu_high_scr:
+        pu_high_scr = pu_scr
 
-    return high_scr
+    return high_scr, pu_high_scr
 
 
 'DISPLAY'
@@ -235,10 +251,12 @@ bird_flap = pg.USEREVENT + 1
 pg.time.set_timer(bird_flap, 200)
 bird_move = 0.0
 bird_rotate = 0
+bird_moving_up = False
+bird_moving_down = False
 
 'POWER-UP'
 powerUp1 = pg.image.load('assets/images/sprites/lightning.png').convert_alpha() 
-powerUp2 = pg.image.load('assets/images/sprites/R_Pickup_1.png').convert_alpha() 
+powerUp2 = pg.image.load('assets/images/sprites/R_Pickup_1.png.png').convert_alpha()
 powerUp3 = pg.image.load('assets/images/sprites/clock_icon.png').convert_alpha() 
 powerUp_types = [1, 2, 3]
 currentPU_type = 1		# default to 1, changed when new ones spawned 
@@ -265,6 +283,8 @@ font = pg.font.Font('assets/font/04B_19.ttf', 20)
 'SCORE'
 high_score = 0
 score = high_score
+pu_score = 0
+pu_high_score = pu_score
 
 'FPS'
 clock = pg.time.Clock()
@@ -282,24 +302,24 @@ while True:
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_UP or event.key == pg.K_w:
-                bird_move = -4.0 * speed_multiplier
-                bird_rotate = 20
+                bird_moving_up = True
             if event.key == pg.K_DOWN or event.key == pg.K_s:
-                bird_move = 4.0 * speed_multiplier
-                bird_rotate = -20
+                bird_moving_down = True
             if event.key == pg.K_SPACE and not game:
                 game = True
                 pipe_list.clear()
                 bird_move = 0.0
                 bird_rect.center = (50, DISPLAY_HEIGHT // 2)
                 score = 0
+                pu_score = 0
                 obstacle_number = 0
                 pipe_speed = 3
 
         if event.type == pg.KEYUP:
-            if event.key == pg.K_UP or event.key == pg.K_w or event.key == pg.K_DOWN or event.key == pg.K_s:
-                bird_move = 0.0
-                bird_rotate = 0
+            if event.key == pg.K_UP or event.key == pg.K_w:
+                bird_moving_up = False
+            if event.key == pg.K_DOWN or event.key == pg.K_s:
+                bird_moving_down = False
 
         if event.type == bird_flap:
             if bird_index < 2:
@@ -313,13 +333,13 @@ while True:
             pipe_list.extend(create_pipe())
             powerUp_spawn_counter += 1
             if pipe_speed <= 4:
-                pipe_speed += 0.1
+                pipe_speed += 0.125
             elif pipe_speed <= 6:
-                pipe_speed += 0.05
+                pipe_speed += 0.1
             elif pipe_speed <= 8:
-                pipe_speed += 0.025
+                pipe_speed += 0.075
             else:
-                pipe_speed += 0.01
+                pipe_speed += 0.05
             pg.time.set_timer(pipe_spawn, int(pipe_spacing / pipe_speed))
             
         if event.type == powerUp_spawn:
@@ -327,6 +347,20 @@ while True:
                 random_pu_type = choice(powerUp_types)
                 powerUp_rect = create_powerUp(random_pu_type)
                 powerUp_spawn_counter = 0
+
+    # Bird movement
+    if bird_moving_up and bird_moving_down:
+        bird_move = 0.0
+        bird_rotate = 0
+    elif bird_moving_up:
+        bird_move = -4.0 * speed_multiplier
+        bird_rotate = 20
+    elif bird_moving_down:
+        bird_move = 4.0 * speed_multiplier
+        bird_rotate = -20
+    else:
+        bird_move = 0.0
+        bird_rotate = 0
 
     display.blit(bg, (0, 0))
     display.blit(bg, (288, 0))
@@ -338,7 +372,7 @@ while True:
 
         display.blit(pg.transform.rotate(bird, bird_rotate), bird_rect)
         game = check_collision(pipe_list)
-        check_collision_pu(powerUp_rect)  # checks for collision with power up
+        pu_score += check_collision_pu(powerUp_rect)  # checks for collision with power up
         if powerUp_active:
             seconds = (pg.time.get_ticks() - start_ticks) / 1000  # calculate how many seconds
             if seconds > powerUp_duration:  # if more than 5 seconds, then clear the power up
@@ -371,7 +405,7 @@ while True:
         powerUp_rect = move_powerUp(powerUp_rect)
         
         # SCORE
-        high_score = score_update(score, high_score)
+        high_score, pu_high_score = score_update(score, high_score, pu_score, pu_high_score)
         score_display('game_over')
 
     # FLOOR
