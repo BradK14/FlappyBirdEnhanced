@@ -86,15 +86,30 @@ def check_collision(pipes):
     return True
     
     
-def create_powerUp():
+def create_powerUp(type):
     random_pu_pos = choice(powerUp_height)
-    powerUp_rect_object = powerUp.get_rect(center=(DISPLAY_WIDTH + 220, (DISPLAY_HEIGHT // 2) + random_pu_pos))
+    global currentPU_type	# use the global power-up type variable
+    
+    if type == 1:		# create type corresponding to argument (change powerUp1, powerUp2, etc befote .get_rect)
+        powerUp_rect_object = powerUp1.get_rect(center=(DISPLAY_WIDTH + 220, (DISPLAY_HEIGHT // 2) + random_pu_pos))
+        currentPU_type = 1        
+    if type == 2:
+        powerUp_rect_object = powerUp2.get_rect(center=(DISPLAY_WIDTH + 220, (DISPLAY_HEIGHT // 2) + random_pu_pos))
+        currentPU_type = 2
+    if type == 3:
+        powerUp_rect_object = powerUp3.get_rect(center=(DISPLAY_WIDTH + 220, (DISPLAY_HEIGHT // 2) + random_pu_pos))
+        currentPU_type = 3 
     
     return powerUp_rect_object
     
     
-def draw_powerUp(powerUp_rect_obj):
-    display.blit(powerUp, powerUp_rect_obj)
+def draw_powerUp(powerUp_rect_obj):	# display the PowerUps
+    if currentPU_type == 1:
+        display.blit(powerUp1, powerUp_rect_obj)	# first argument varies depending on currently-active PowerUp
+    if currentPU_type == 2:
+        display.blit(powerUp2, powerUp_rect_obj)
+    if currentPU_type == 3:
+        display.blit(powerUp3, powerUp_rect_obj)
                 
                 
 def move_powerUp(powerUp_rect_obj): 
@@ -111,22 +126,47 @@ def check_collision_pu(power_up):
         start_ticks = pg.time.get_ticks()
         power_up.center = (1, 512)
         # Pass a string based on the name of the power up
-        activate_pu("speed")
-        powerUp_active = True
+        if currentPU_type == 1:	# check which type of PowerUp is currently active 
+            activate_pu("speed")
+            powerUp_active = True
+        if currentPU_type == 2:
+            activate_pu("space")
+            powerUp_active = True
+        if currentPU_type == 3:	# check which type of PowerUp is currently active 
+            activate_pu("slow")
+            powerUp_active = True
 
 
 # Can set different values depending on power up
 def activate_pu(pu_name):
     if pu_name == "speed":
         global speed_multiplier
-        speed_multiplier = 1.5
+        speed_multiplier = 2.0
+    if pu_name == "space":
+        deactivate_pu(3)	# ensures speed and spacing does not break by activating another PU
+        global pipe_spacing
+        pipe_spacing = 8000
+    if pu_name == "slow":
+        deactivate_pu(2)	# ditto as above
+        global pipe_speed
+        global pipe_speed_store
+        pipe_speed_store = pipe_speed
+        pipe_speed -= 2.0
 
 
 # Set all values affected by power ups to default
-def deactivate_pu():
-    global speed_multiplier
-    speed_multiplier = 1.0
-
+def deactivate_pu(type):
+    if type == 1:
+        global speed_multiplier
+        speed_multiplier = 1.0
+    if type == 2:
+        global pipe_spacing
+        pipe_spacing = 6000
+    if type == 3:
+        global pipe_speed
+        global pipe_speed_store
+        pipe_speed = pipe_speed_store
+    
 
 def score_display(game_state):
     if game_state == 'main_game':
@@ -176,7 +216,9 @@ pipe_spawn = pg.USEREVENT
 obstacle_number = 0
 
 pipe_speed = 3
-pg.time.set_timer(pipe_spawn, int(6000 / pipe_speed))
+pipe_speed_store = 3
+pipe_spacing = 6000
+pg.time.set_timer(pipe_spawn, int(pipe_spacing / pipe_speed))	# delay between spawning another pipe 
 pipe_hei = [200, 300, 400]
 bg_game_over = pg.image.load('assets/images/sprites/Game_Over.png')
 bg_game_over_rect = bg_game_over.get_rect(center=(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2 - 25))
@@ -195,11 +237,17 @@ bird_move = 0.0
 bird_rotate = 0
 
 'POWER-UP'
-powerUp = pg.image.load('assets/images/sprites/lightning.png').convert_alpha()		# replace with different file later 
+powerUp1 = pg.image.load('assets/images/sprites/lightning.png').convert_alpha() 
+powerUp2 = pg.image.load('assets/images/sprites/R_Pickup_1.png').convert_alpha() 
+powerUp3 = pg.image.load('assets/images/sprites/clock_icon.png').convert_alpha() 
+powerUp_types = [1, 2, 3]
+currentPU_type = 1		# default to 1, changed when new ones spawned 
+powerUp_duration = 5		# default to 5, changes according to last power-up created
+
 powerUp_spawn = pg.USEREVENT
 powerUp_spawn_counter = 0	# counter used to determine when to spawn a power-up
 powerUp_height = [-100, 0, 100]
-powerUp_rect = powerUp.get_rect(center=(DISPLAY_WIDTH + 20, DISPLAY_HEIGHT // 2))
+powerUp_rect = powerUp1.get_rect(center=(DISPLAY_WIDTH + 20, DISPLAY_HEIGHT // 2))
 powerUp_active = False  # is there an active power up?
 start_ticks = 0  # start_ticks starts the timer for the power up
 speed_multiplier = 1.0
@@ -272,11 +320,12 @@ while True:
                 pipe_speed += 0.025
             else:
                 pipe_speed += 0.01
-            pg.time.set_timer(pipe_spawn, int(6000 / pipe_speed))
+            pg.time.set_timer(pipe_spawn, int(pipe_spacing / pipe_speed))
             
         if event.type == powerUp_spawn:
-            if powerUp_spawn_counter % 15 == 0:	# this adjusts how frequently power-ups will spawn
-                powerUp_rect = create_powerUp()
+            if powerUp_spawn_counter % 5 == 0:	# this adjusts how frequently power-ups will spawn
+                random_pu_type = choice(powerUp_types)
+                powerUp_rect = create_powerUp(random_pu_type)
                 powerUp_spawn_counter = 0
 
     display.blit(bg, (0, 0))
@@ -292,9 +341,9 @@ while True:
         check_collision_pu(powerUp_rect)  # checks for collision with power up
         if powerUp_active:
             seconds = (pg.time.get_ticks() - start_ticks) / 1000  # calculate how many seconds
-            if seconds > 5:  # if more than 5 seconds, then clear the power up
+            if seconds > powerUp_duration:  # if more than 5 seconds, then clear the power up
                 # This function sets all the power up effects back to default values
-                deactivate_pu()
+                deactivate_pu(currentPU_type)
                 powerUp_active = False
 
         # PIPE
@@ -311,7 +360,7 @@ while True:
         score = increment_score(score, 1)
 
     else:
-        deactivate_pu()
+        deactivate_pu(currentPU_type)
         display.blit(bg_game_over, bg_game_over_rect)
 
         # PIPE
