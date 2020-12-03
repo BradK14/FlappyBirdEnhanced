@@ -6,10 +6,19 @@ from FlaPyBird.constants import *
 
 
 def animation():
-    new_bird = bird_frames[bird_index]
-    new_bird_rect = new_bird.get_rect(center=(50, bird_rect.centery))
+    global speedy_active
+
     new_powerUp2 = powerUp2_frames[powerUp2_index]
     new_powerUp2_rect = new_powerUp2.get_rect(center=(powerUp_rect.centerx, powerUp_rect.centery))
+    
+    if speedy_active == False:
+        new_bird = bird_frames[bird_index]
+        new_bird_rect = new_bird.get_rect(center=(50, bird_rect.centery))
+        
+    if speedy_active == True:
+        new_bird = bird_speedy_frames[bird_index]
+        new_bird_rect = new_bird.get_rect(center=(50, bird_rect.centery))
+
 
     return new_bird, new_bird_rect, new_powerUp2, new_powerUp2_rect
 
@@ -150,6 +159,8 @@ def activate_pu(pu_name, p_ups_active):
         deactivate_pu(3, p_ups_active)  # Preemptively deactivating power ups
         deactivate_pu(2, p_ups_active)
         global speed_multiplier
+        global speedy_active
+        speedy_active = True
         speed_multiplier = 2.0
     if pu_name == "space":
         deactivate_pu(3, p_ups_active)	# ensures speed and spacing does not break by activating another PU
@@ -170,6 +181,8 @@ def deactivate_pu(type, p_ups_active):
     if type == 1:
         p_ups_active[0] = False
         global speed_multiplier
+        global speedy_active
+        speedy_active = False
         speed_multiplier = 1.0
     if type == 2:
         p_ups_active[1] = False
@@ -268,9 +281,20 @@ bird_down = pg.image.load('assets/images/sprites/Bird_down.png').convert_alpha()
 bird_mid = pg.image.load('assets/images/sprites/Bird_mid.png').convert_alpha()
 bird_up = pg.image.load('assets/images/sprites/Bird_up.png').convert_alpha()
 bird_frames = [bird_down, bird_mid, bird_up]
+
+bird_down_speedy = pg.image.load('assets/images/sprites/Bird_down_speedy.png').convert_alpha()
+bird_mid_speedy = pg.image.load('assets/images/sprites/Bird_mid_speedy.png').convert_alpha()
+bird_up_speedy = pg.image.load('assets/images/sprites/Bird_up_speedy.png').convert_alpha()
+bird_speedy_frames = [bird_down_speedy, bird_mid_speedy, bird_up_speedy]
+
 bird_index = 0
 bird = bird_frames[bird_index]
 bird_rect = bird.get_rect(center=(50, DISPLAY_HEIGHT // 2))
+
+speedy_active = False
+bird_speedy = bird_speedy_frames[bird_index]
+bird_speedy_rect = bird_speedy.get_rect(center=(50, DISPLAY_HEIGHT // 2))
+
 bird_flap = pg.USEREVENT + 1
 pg.time.set_timer(bird_flap, 200)
 bird_move = 0.0
