@@ -66,7 +66,7 @@ def check_obstacle_passed():
     if len(pipes) > obstacle_number:
         if pipes[obstacle_number][0] + 52 <= 26:
             obstacle_number += 2
-            # point_snd.play()
+            point_snd.play()
             return True
 
     return False
@@ -75,12 +75,12 @@ def check_obstacle_passed():
 def check_collision(pipes):
     for p in pipes:
         if bird_rect.colliderect(p):
-            # collide_snd.play()
+            collide_snd.play()
             return False
 
     for i in range(3):
         if bird_rect.top <= 0 or bird_rect.bottom >= DISPLAY_HEIGHT - floor_rects[i].height // 2:
-            # collide_snd.play()
+            collide_snd.play()
             return False
 
     return True
@@ -119,7 +119,7 @@ def move_powerUp(powerUp_rect_obj):
 
 
 # Checks for power up collision, moves them out of screen
-def check_collision_pu(power_up):
+def check_collision_pu(power_up, p_ups_active):
     if bird_rect.colliderect(power_up):
         global start_ticks
         global powerUp_active  # is the power up active?
@@ -127,29 +127,32 @@ def check_collision_pu(power_up):
         power_up.center = (1, 512)
         # Pass a string based on the name of the power up
         if currentPU_type == 1:	# check which type of PowerUp is currently active 
-            activate_pu("speed")
+            activate_pu("speed", p_ups_active)
             powerUp_active = True
+            p_ups_active[0] = True
         if currentPU_type == 2:
-            activate_pu("space")
+            activate_pu("space", p_ups_active)
             powerUp_active = True
+            p_ups_active[1] = True
         if currentPU_type == 3:	# check which type of PowerUp is currently active 
-            activate_pu("slow")
+            activate_pu("slow", p_ups_active)
             powerUp_active = True
+            p_ups_active[2] = True
         return 1
     return 0
 
 
 # Can set different values depending on power up
-def activate_pu(pu_name):
+def activate_pu(pu_name, p_ups_active):
     if pu_name == "speed":
         global speed_multiplier
         speed_multiplier = 2.0
     if pu_name == "space":
-        deactivate_pu(3)	# ensures speed and spacing does not break by activating another PU
+        deactivate_pu(3, p_ups_active)	# ensures speed and spacing does not break by activating another PU
         global pipe_spacing
         pipe_spacing = 8000
     if pu_name == "slow":
-        deactivate_pu(2)	# ditto as above
+        deactivate_pu(2, p_ups_active)	# ditto as above
         global pipe_speed
         global pipe_speed_store
         pipe_speed_store = pipe_speed
@@ -157,14 +160,17 @@ def activate_pu(pu_name):
 
 
 # Set all values affected by power ups to default
-def deactivate_pu(type):
+def deactivate_pu(type, p_ups_active):
     if type == 1:
+        p_ups_active[0] = False
         global speed_multiplier
         speed_multiplier = 1.0
     if type == 2:
+        p_ups_active[1] = False
         global pipe_spacing
         pipe_spacing = 6000
     if type == 3:
+        p_ups_active[2] = False
         global pipe_speed
         global pipe_speed_store
         pipe_speed = pipe_speed_store
@@ -195,6 +201,18 @@ def score_display(game_state):
         pu_hight_score_font = font.render(f'Power Up High Score: {int(pu_high_score)}', True, yellow)
         pu_hight_score_font_rect = pu_hight_score_font.get_rect(center=(DISPLAY_WIDTH // 2, 442))
         display.blit(pu_hight_score_font, pu_hight_score_font_rect)
+
+
+def display_active_power_ups(p_ups_active):
+    if p_ups_active[0]:
+        pu_rect = powerUp1.get_rect(center=(DISPLAY_WIDTH // 2 - 225, 50))
+        display.blit(powerUp1, pu_rect)
+    if p_ups_active[1]:
+        pu_rect = powerUp2.get_rect(center=(DISPLAY_WIDTH // 2 - 150, 50))
+        display.blit(powerUp2, pu_rect)
+    if p_ups_active[2]:
+        pu_rect = powerUp3.get_rect(center=(DISPLAY_WIDTH // 2 - 75, 50))
+        display.blit(powerUp3, pu_rect)
 
 
 def increment_score(scr, increment):
@@ -267,6 +285,10 @@ powerUp_spawn_counter = 0	# counter used to determine when to spawn a power-up
 powerUp_height = [-100, 0, 100]
 powerUp_rect = powerUp1.get_rect(center=(DISPLAY_WIDTH + 20, DISPLAY_HEIGHT // 2))
 powerUp_active = False  # is there an active power up?
+p_ups_active = [False, False, False]
+pu_1_active = False
+pu_2_active = False
+pu_3_active = False
 start_ticks = 0  # start_ticks starts the timer for the power up
 speed_multiplier = 1.0
 
@@ -372,12 +394,12 @@ while True:
 
         display.blit(pg.transform.rotate(bird, bird_rotate), bird_rect)
         game = check_collision(pipe_list)
-        pu_score += check_collision_pu(powerUp_rect)  # checks for collision with power up
+        pu_score += check_collision_pu(powerUp_rect, p_ups_active)  # checks for collision with power up
         if powerUp_active:
             seconds = (pg.time.get_ticks() - start_ticks) / 1000  # calculate how many seconds
             if seconds > powerUp_duration:  # if more than 5 seconds, then clear the power up
                 # This function sets all the power up effects back to default values
-                deactivate_pu(currentPU_type)
+                deactivate_pu(currentPU_type, p_ups_active)
                 powerUp_active = False
 
         # PIPE
@@ -393,8 +415,10 @@ while True:
         score_display('main_game')
         score = increment_score(score, 1)
 
+        # ACTIVE POWER-UPS
+        display_active_power_ups(p_ups_active)
     else:
-        deactivate_pu(currentPU_type)
+        deactivate_pu(currentPU_type, p_ups_active)
         display.blit(bg_game_over, bg_game_over_rect)
 
         # PIPE
