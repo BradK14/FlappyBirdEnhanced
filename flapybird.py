@@ -1,4 +1,5 @@
 import pygame as pg
+import time
 from sys import exit
 from random import choice
 from FlaPyBird.constants import *
@@ -102,6 +103,31 @@ def move_powerUp(powerUp_rect_obj):
     return powerUp_rect_obj
 
 
+# Checks for power up collision, moves them out of screen
+def check_collision_pu(power_up):
+    if bird_rect.colliderect(power_up):
+        global start_ticks
+        global powerUp_active  # is the power up active?
+        start_ticks = pg.time.get_ticks()
+        power_up.center = (1, 512)
+        # Pass a string based on the name of the power up
+        activate_pu("speed")
+        powerUp_active = True
+
+
+# Can set different values depending on power up
+def activate_pu(pu_name):
+    if pu_name == "speed":
+        global speed_multiplier
+        speed_multiplier = 1.5
+
+
+# Set all values affected by power ups to default
+def deactivate_pu():
+    global speed_multiplier
+    speed_multiplier = 1.0
+
+
 def score_display(game_state):
     if game_state == 'main_game':
         score_font = font.render(str(int(score)), True, white)
@@ -165,15 +191,18 @@ bird = bird_frames[bird_index]
 bird_rect = bird.get_rect(center=(50, DISPLAY_HEIGHT // 2))
 bird_flap = pg.USEREVENT + 1
 pg.time.set_timer(bird_flap, 200)
-bird_move = 0
+bird_move = 0.0
 bird_rotate = 0
 
 'POWER-UP'
-powerUp = pg.image.load('assets/images/sprites/Bird_up.png').convert_alpha()		# replace with different file later 
+powerUp = pg.image.load('assets/images/sprites/lightning.png').convert_alpha()		# replace with different file later 
 powerUp_spawn = pg.USEREVENT
 powerUp_spawn_counter = 0	# counter used to determine when to spawn a power-up
 powerUp_height = [-100, 0, 100]
 powerUp_rect = powerUp.get_rect(center=(DISPLAY_WIDTH + 20, DISPLAY_HEIGHT // 2))
+powerUp_active = False  # is there an active power up?
+start_ticks = 0  # start_ticks starts the timer for the power up
+speed_multiplier = 1.0
 
 'SOUND EFFECTS'
 pg.mixer.init(44100, 16, 2, 512)
@@ -205,15 +234,15 @@ while True:
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_UP or event.key == pg.K_w:
-                bird_move = -4
+                bird_move = -4.0 * speed_multiplier
                 bird_rotate = 20
             if event.key == pg.K_DOWN or event.key == pg.K_s:
-                bird_move = 4
+                bird_move = 4.0 * speed_multiplier
                 bird_rotate = -20
             if event.key == pg.K_SPACE and not game:
                 game = True
                 pipe_list.clear()
-                bird_move = 0
+                bird_move = 0.0
                 bird_rect.center = (50, DISPLAY_HEIGHT // 2)
                 score = 0
                 obstacle_number = 0
@@ -221,7 +250,7 @@ while True:
 
         if event.type == pg.KEYUP:
             if event.key == pg.K_UP or event.key == pg.K_w or event.key == pg.K_DOWN or event.key == pg.K_s:
-                bird_move = 0
+                bird_move = 0.0
                 bird_rotate = 0
 
         if event.type == bird_flap:
@@ -256,10 +285,17 @@ while True:
 
     if game:
         # BIRD
-        bird_rect.centery += int(bird_move)
+        bird_rect.centery += float(bird_move)
 
         display.blit(pg.transform.rotate(bird, bird_rotate), bird_rect)
         game = check_collision(pipe_list)
+        check_collision_pu(powerUp_rect)  # checks for collision with power up
+        if powerUp_active:
+            seconds = (pg.time.get_ticks() - start_ticks) / 1000  # calculate how many seconds
+            if seconds > 5:  # if more than 5 seconds, then clear the power up
+                # This function sets all the power up effects back to default values
+                deactivate_pu()
+                powerUp_active = False
 
         # PIPE
         draw_pipe(pipe_list)
@@ -275,6 +311,7 @@ while True:
         score = increment_score(score, 1)
 
     else:
+        deactivate_pu()
         display.blit(bg_game_over, bg_game_over_rect)
 
         # PIPE
